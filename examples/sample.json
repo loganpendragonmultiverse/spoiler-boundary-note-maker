@@ -1,0 +1,15 @@
+{
+  "works": [
+    {
+      "name": "Glass Harbor",
+      "through": "chapter 8",
+      "exclude": [
+        "the lighthouse identity"
+      ]
+    },
+    {
+      "name": "North Road",
+      "through": "episode 3"
+    }
+  ]
+}
