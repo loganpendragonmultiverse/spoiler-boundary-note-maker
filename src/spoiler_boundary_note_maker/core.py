@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 PROJECT = "spoiler-boundary-note-maker"
+BOUNDARY_TYPES = {"chapter", "issue", "episode", "season", "quest", "timestamp"}
 
 
 def _require(data: dict[str, Any], key: str) -> Any:
@@ -13,24 +14,106 @@ def _require(data: dict[str, Any], key: str) -> Any:
     return value
 
 
-def _spoiler_boundary(data: dict[str, Any]) -> dict[str, Any]:
-    boundaries: list[dict[str, Any]] = []
-    for item in _require(data, "works"):
-        name = str(_require(item, "name"))
-        through = str(_require(item, "through"))
-        exclusions = [str(value) for value in item.get("exclude", [])]
-        note = f"Safe through {name}: {through}."
-        if exclusions:
-            note += " Do not discuss " + ", ".join(exclusions) + "."
-        boundaries.append({"name": name, "through": through, "exclude": exclusions, "note": note})
-    return {
-        "boundaries": boundaries,
-        "combined_note": " ".join(item["note"] for item in boundaries),
-    }
-
-
 def analyze(data: dict[str, Any]) -> dict[str, Any]:
-    return {"version": 1, "project": PROJECT, **_spoiler_boundary(data)}
+    works = _require(data, "works")
+    if not isinstance(works, list):
+        raise TypeError("works must be a list")
+    boundaries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, item in enumerate(works, 1):
+        if not isinstance(item, dict):
+            raise TypeError(f"work {index} must be an object")
+        name = str(_require(item, "name")).strip()
+        key = name.casefold()
+        if key in seen:
+            raise ValueError(f"duplicate work: {name}")
+        seen.add(key)
+        people = item.get("people")
+        legacy = people is None
+        if people is None:
+            boundary_type = str(item.get("boundary_type", "chapter"))
+            value = item.get("boundary", item.get("through"))
+            people = [{"name": "shared", "boundary_type": boundary_type, "boundary": value}]
+        if not isinstance(people, list) or not people:
+            raise ValueError(f"work {name} requires people boundaries")
+        normalized = []
+        for person in people:
+            if not isinstance(person, dict):
+                raise TypeError("people boundaries must be objects")
+            kind = str(person.get("boundary_type", item.get("boundary_type", "chapter")))
+            if kind not in BOUNDARY_TYPES:
+                raise ValueError(f"unsupported boundary type: {kind}")
+            value = person.get("boundary", person.get("through"))
+            if value is None or value == "":
+                raise ValueError(f"{name} has a missing boundary")
+            normalized.append(
+                {
+                    "name": str(person.get("name", "reader")),
+                    "boundary_type": kind,
+                    "boundary": value,
+                }
+            )
+        kinds = {person["boundary_type"] for person in normalized}
+        if len(kinds) != 1:
+            raise ValueError(f"{name} boundaries must use the same type")
+        numeric = all(isinstance(person["boundary"], (int, float)) for person in normalized)
+        safe = (
+            min(person["boundary"] for person in normalized)
+            if numeric
+            else normalized[0]["boundary"]
+        )
+        exclusions = item.get("exclusions", item.get("exclude", []))
+        if not isinstance(exclusions, list):
+            raise TypeError("exclusions must be a list")
+        categorized = [
+            value if isinstance(value, dict) else {"category": "general", "text": str(value)}
+            for value in exclusions
+        ]
+        note = (
+            f"Safe through {name}: {safe}."
+            if legacy
+            else f"Safe through {name}: {next(iter(kinds))} {safe}."
+        )
+        if categorized:
+            if legacy:
+                note += (
+                    " Do not discuss "
+                    + ", ".join(str(x.get("text", "")) for x in categorized)
+                    + "."
+                )
+            else:
+                note += (
+                    " Avoid "
+                    + "; ".join(
+                        f"{x.get('category', 'general')}: {x.get('text', '')}" for x in categorized
+                    )
+                    + "."
+                )
+        boundaries.append(
+            {
+                "name": name,
+                "boundary_type": next(iter(kinds)),
+                "safe_boundary": safe,
+                "people": normalized,
+                "exclusions": categorized,
+                "note": note,
+            }
+        )
+    preset = str(data.get("preset", "friends"))
+    combined = " ".join(item["note"] for item in boundaries)
+    if preset == "public":
+        combined = "Spoiler-safe discussion boundary: " + combined
+    elif preset == "private":
+        combined = "Private boundary details: " + combined
+    elif preset != "friends":
+        raise ValueError("preset must be friends, public, or private")
+    return {
+        "version": 2,
+        "project": PROJECT,
+        "preset": preset,
+        "boundaries": boundaries,
+        "combined_note": combined,
+    }
 
 
 def render_json(report: dict[str, Any]) -> str:
@@ -38,15 +121,11 @@ def render_json(report: dict[str, Any]) -> str:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
-    lines = [f"# {report['project'].replace('-', ' ').title()} report", ""]
-    for key, value in report.items():
-        if key not in {"version", "project"}:
-            lines.extend(
-                [
-                    f"## {key.replace('_', ' ').title()}",
-                    "",
-                    f"```json\n{json.dumps(value, indent=2, ensure_ascii=False, default=str)}\n```",
-                    "",
-                ]
+    lines = ["# Spoiler Boundary Note Maker", "", report["combined_note"], "", "## Boundaries", ""]
+    for item in report["boundaries"]:
+        lines.append(f"- **{item['name']}**: {item['boundary_type']} {item['safe_boundary']}")
+        for exclusion in item["exclusions"]:
+            lines.append(
+                f"  - Avoid ({exclusion.get('category', 'general')}): {exclusion.get('text', '')}"
             )
     return "\n".join(lines).rstrip() + "\n"
