@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 - 2026-10-16
+
+- Added ordered named milestones and participant-order-independent selection of the earliest shared boundary.
+- Rejected unordered, incompatible, duplicate and unknown labels, booleans and nonfinite numbers; preserved numeric comparison and single legacy through notes.
+- Clarified that the public preset does not anonymize participant details.
+
 ## 1.1.0 - 2026-07-27
 
 - Added typed chapter, issue, episode, season, quest, and timestamp boundaries.

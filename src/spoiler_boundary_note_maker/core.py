@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from typing import Any
 
 PROJECT = "spoiler-boundary-note-maker"
@@ -56,12 +57,31 @@ def analyze(data: dict[str, Any]) -> dict[str, Any]:
         kinds = {person["boundary_type"] for person in normalized}
         if len(kinds) != 1:
             raise ValueError(f"{name} boundaries must use the same type")
-        numeric = all(isinstance(person["boundary"], (int, float)) for person in normalized)
-        safe = (
-            min(person["boundary"] for person in normalized)
-            if numeric
-            else normalized[0]["boundary"]
-        )
+        values = [person["boundary"] for person in normalized]
+        milestones = item.get("milestones")
+        if milestones is not None:
+            if (
+                not isinstance(milestones, list)
+                or not milestones
+                or any(not isinstance(label, str) or not label.strip() for label in milestones)
+                or len(set(milestones)) != len(milestones)
+            ):
+                raise ValueError("milestones must be an ordered unique non-empty string list")
+            if any(not isinstance(value, str) or value not in milestones for value in values):
+                raise ValueError("boundaries must name declared milestones")
+            safe = min(values, key=milestones.index)
+        elif legacy and isinstance(values[0], str) and values[0].strip():
+            safe = values[0]
+        else:
+            if any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or isinstance(value, float)
+                and not math.isfinite(value)
+                for value in values
+            ):
+                raise ValueError("boundaries require finite numbers or ordered named milestones")
+            safe = min(values)
         exclusions = item.get("exclusions", item.get("exclude", []))
         if not isinstance(exclusions, list):
             raise TypeError("exclusions must be a list")
