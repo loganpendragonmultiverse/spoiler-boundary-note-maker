@@ -38,3 +38,9 @@ python -m build
 Release metadata must stay aligned across the package, changelog, GitHub release, and Logan Pendragon Forge catalog.
 
 Part of the [Logan Pendragon Forge open-source collection](https://www.loganpendragonforge.com/open-source/). Licensed under the [MIT License](LICENSE).
+
+## 1.2.0 - 2026-10-16
+
+For named boundaries, declare an explicit earlier-to-later `milestones` list on the work, for example `"milestones":["Opening","Arrival","Finale"]`, and set each person's `boundary` to one of those exact strings. All participants must use the same supported boundary type. Selection is independent of participant order. Empty, duplicate or unknown labels and mixed numeric/named boundaries fail closed; without a milestone list, multiple-person boundaries must be finite numbers. Booleans, NaN and infinity are rejected. Valid numeric comparison and the original single `through` text note remain supported. Unused future milestone labels are not copied into reports.
+
+The `public` preset changes note wording only. JSON retains participant names and supplied boundaries, including participants who are further ahead; it does not anonymize them or redact their submitted details. Review reports before sharing.
