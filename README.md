@@ -50,8 +50,8 @@ The `public` preset changes note wording only. JSON retains participant names an
 Work names, supplied participant names, and exclusion text/categories must be
 non-empty strings; malformed JSON structures produce an actionable error. Output files are created exclusively:
 existing files and symbolic links are rejected, including dangling links. This
-protects the selected output leaf; it is not a guarantee against hostile changes
-to parent directories during the command. Inputs remain read-only.
+checks an existing output leaf and creates files exclusively; it is not an
+atomic defense against hostile leaf or parent-path replacement during the command. Inputs remain read-only.
 
 `examples/shared-milestones.json` demonstrates ordered named boundaries,
 participants at different points, and categorized exclusions.
