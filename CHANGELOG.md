@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 - 2026-10-20
+
+- Reject malformed or blank required text with actionable errors before rendering.
+- Create report outputs exclusively, preserving existing files and dangling symlinks.
+- Extend regression coverage and package the complete developer handoff documentation.
+
 ## 1.2.0 - 2026-10-16
 
 - Added ordered named milestones and participant-order-independent selection of the earliest shared boundary.

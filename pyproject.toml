@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spoiler-boundary-note-maker"
-version = "1.2.0"
+version = "1.2.1"
 description = "Record precise safe-discussion boundaries across books, comics, shows, and games."
 readme = "README.md"
 requires-python = ">=3.10"
