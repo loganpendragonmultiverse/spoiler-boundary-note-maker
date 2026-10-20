@@ -38,3 +38,4 @@ addopts = "--cov=spoiler_boundary_note_maker --cov-branch --cov-report=term-miss
 
 [tool.setuptools.data-files]
 "share/doc/spoiler-boundary-note-maker" = ["README.md", "CHANGELOG.md", "DEVELOPMENT.md", "TESTING.md"]
+"share/doc/spoiler-boundary-note-maker/examples" = ["examples/sample.json", "examples/shared-milestones.json"]

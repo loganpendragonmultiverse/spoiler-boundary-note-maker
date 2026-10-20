@@ -55,3 +55,6 @@ atomic defense against hostile leaf or parent-path replacement during the comman
 
 `examples/shared-milestones.json` demonstrates ordered named boundaries,
 participants at different points, and categorized exclusions.
+
+Both JSON examples are included in source archives under `examples/` and in
+installed wheels under `share/doc/spoiler-boundary-note-maker/examples/`.
