@@ -1,0 +1,30 @@
+{
+  "preset": "friends",
+  "works": [
+    {
+      "name": "Harbor",
+      "boundary_type": "chapter",
+      "milestones": [
+        "Opening",
+        "Arrival",
+        "Finale"
+      ],
+      "people": [
+        {
+          "name": "A Reader",
+          "boundary": "Arrival"
+        },
+        {
+          "name": "B Reader",
+          "boundary": "Opening"
+        }
+      ],
+      "exclusions": [
+        {
+          "category": "identity",
+          "text": "the keeper"
+        }
+      ]
+    }
+  ]
+}

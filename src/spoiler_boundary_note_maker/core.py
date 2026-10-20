@@ -16,6 +16,8 @@ def _require(data: dict[str, Any], key: str) -> Any:
 
 
 def analyze(data: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise TypeError("input must be a JSON object")
     works = _require(data, "works")
     if not isinstance(works, list):
         raise TypeError("works must be a list")
@@ -24,7 +26,10 @@ def analyze(data: dict[str, Any]) -> dict[str, Any]:
     for index, item in enumerate(works, 1):
         if not isinstance(item, dict):
             raise TypeError(f"work {index} must be an object")
-        name = str(_require(item, "name")).strip()
+        raw_name = _require(item, "name")
+        if not isinstance(raw_name, str) or not raw_name.strip():
+            raise ValueError(f"work {index} name must be non-empty text")
+        name = raw_name.strip()
         key = name.casefold()
         if key in seen:
             raise ValueError(f"duplicate work: {name}")
@@ -47,9 +52,12 @@ def analyze(data: dict[str, Any]) -> dict[str, Any]:
             value = person.get("boundary", person.get("through"))
             if value is None or value == "":
                 raise ValueError(f"{name} has a missing boundary")
+            person_name = person.get("name", "reader")
+            if not isinstance(person_name, str) or not person_name.strip():
+                raise ValueError("participant name must be non-empty text")
             normalized.append(
                 {
-                    "name": str(person.get("name", "reader")),
+                    "name": person_name.strip(),
                     "boundary_type": kind,
                     "boundary": value,
                 }
@@ -85,10 +93,25 @@ def analyze(data: dict[str, Any]) -> dict[str, Any]:
         exclusions = item.get("exclusions", item.get("exclude", []))
         if not isinstance(exclusions, list):
             raise TypeError("exclusions must be a list")
-        categorized = [
-            value if isinstance(value, dict) else {"category": "general", "text": str(value)}
-            for value in exclusions
-        ]
+        categorized = []
+        for exclusion in exclusions:
+            category: Any
+            text: Any
+            if isinstance(exclusion, str):
+                category, text = "general", exclusion
+            elif isinstance(exclusion, dict):
+                category = exclusion.get("category", "general")
+                text = exclusion.get("text")
+            else:
+                raise TypeError("exclusions must contain text or category/text objects")
+            if (
+                not isinstance(category, str)
+                or not category.strip()
+                or not isinstance(text, str)
+                or not text.strip()
+            ):
+                raise ValueError("exclusion category and text must be non-empty text")
+            categorized.append({"category": category, "text": text})
         note = (
             f"Safe through {name}: {safe}."
             if legacy
